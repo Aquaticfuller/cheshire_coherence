@@ -91,6 +91,14 @@
         disable-wp;
       };
     };
+    usb@1001000 {
+      compatible = "generic-ohci";
+      reg = <0x0 0x1001000 0x0 0x1000>;
+      interrupt-parent = <&PLIC0>;
+      interrupts = <19>;
+      //clock-frequency = <48000000>;
+      //phy-names = "usb";
+    };
     vga@3007000 {
       compatible = "eth,axi-vga";
       reg = <0x0 0x3007000 0x0 0x1000>;

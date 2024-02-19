@@ -137,7 +137,7 @@ $(foreach link,$(patsubst $(CHS_SW_LD_DIR)/%.ld,%,$(wildcard $(CHS_SW_LD_DIR)/*.
 	$(CHS_SW_OBJCOPY) -I binary -O verilog $< $@
 
 # Images from CVA6 SDK (built externally)
-CHS_CVA6_SDK_IMGS ?= $(addprefix $(CHS_SW_DIR)/deps/cva6-sdk/install64/,fw_payload.bin uImage)
+CHS_CVA6_SDK_IMGS ?= $(addprefix $(CHS_SW_DIR)/../install64/,fw_payload.bin uImage)
 
 # Create full Linux disk image
 $(CHS_SW_DIR)/boot/linux.gpt.bin: $(CHS_SW_DIR)/boot/zsl.rom.bin $(CHS_SW_DIR)/boot/cheshire.dtb $(CHS_CVA6_SDK_IMGS)
@@ -153,6 +153,8 @@ $(CHS_SW_DIR)/boot/linux.gpt.bin: $(CHS_SW_DIR)/boot/zsl.rom.bin $(CHS_SW_DIR)/b
 	dd if=$(word 2,$^) of=$@ bs=512 seek=128 conv=notrunc
 	dd if=$(word 3,$^) of=$@ bs=512 seek=2048 conv=notrunc
 	dd if=$(word 4,$^) of=$@ bs=512 seek=8192 conv=notrunc
+
+linux: $(CHS_SW_DIR)/boot/linux.gpt.bin
 
 #########
 # Tests #

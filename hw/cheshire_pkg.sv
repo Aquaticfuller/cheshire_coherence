@@ -128,6 +128,7 @@ package cheshire_pkg;
     bit     I2c;
     bit     SpiHost;
     bit     Gpio;
+    bit     Usb;
     bit     Dma;
     bit     SerialLink;
     bit     Vga;
@@ -169,6 +170,16 @@ package cheshire_pkg;
     doub_bt SlinkTxAddrMask;
     doub_bt SlinkTxAddrDomain;
     dw_bt   SlinkUserAmoBit;
+    // Parameters for USB
+    dw_bt   UsbConfMaxReadTxns;
+    dw_bt   UsbConfMaxWriteTxns;
+    aw_bt   UsbConfAmoNumCuts;
+    bit     UsbConfAmoPostCut;
+    bit     UsbConfEnableTwoD;
+    dw_bt   UsbNumAxInFlight;
+    dw_bt   UsbMemSysDepth;
+    aw_bt   UsbJobFifoDepth;
+    bit     UsbRAWCouplingAvail;
     // Parameters for DMA
     dw_bt   DmaConfMaxReadTxns;
     dw_bt   DmaConfMaxWriteTxns;
@@ -209,6 +220,7 @@ package cheshire_pkg;
   typedef struct packed {
     cheshire_bus_err_intr_t bus_err;
     logic [31:0] gpio;
+    logic usb;
     logic spih_spi_event;
     logic spih_error;
     logic i2c_host_timeout;
@@ -285,6 +297,7 @@ package cheshire_pkg;
   typedef struct packed {
     aw_bt [2**MaxCoresWidth-1:0] cores;
     aw_bt dbg;
+    aw_bt usb; //Add USB as master to AXI Bar
     aw_bt dma;
     aw_bt slink;
     aw_bt vga;
@@ -297,6 +310,7 @@ package cheshire_pkg;
     int unsigned i = 0;
     for (int j = 0; j < cfg.NumCores; j++) begin ret.cores[i] = i; i++; end
     ret.dbg = i;
+    if (cfg.Usb)        begin i++; ret.usb   = i; end
     if (cfg.Dma)        begin i++; ret.dma   = i; end
     if (cfg.SerialLink) begin i++; ret.slink = i; end
     if (cfg.Vga)        begin i++; ret.vga   = i; end
@@ -319,6 +333,7 @@ package cheshire_pkg;
     aw_bt reg_demux;
     aw_bt llc;
     aw_bt spm;
+    aw_bt usb; // Add USB control port as a slave
     aw_bt dma;
     aw_bt slink;
     aw_bt ext_base;
@@ -345,6 +360,8 @@ package cheshire_pkg;
       r++; ret.map[r] = '{i, AmSpm, AmSpm + SizeSpm};
       r++; ret.map[r] = '{i, AmSpm + 'h0400_0000, AmSpm + 'h0400_0000 + SizeSpm};
     end
+    //USB requires 2KB of 32bit aligned memory, it seems like the exact position in memory is not important
+    if (cfg.Usb)          begin i++; r++; ret.usb = i; ret.map[r] = '{i, 'h0100_1000, 'h0100_2000}; end // Give it a 4K window (as Paul suggested)
     if (cfg.Dma)          begin i++; r++; ret.dma = i; ret.map[r] = '{i, 'h0100_0000, 'h0100_1000}; end
     if (cfg.SerialLink)   begin i++; r++; ret.slink = i;
         ret.map[r] = '{i, cfg.SlinkRegionStart, cfg.SlinkRegionEnd}; end
@@ -543,6 +560,7 @@ package cheshire_pkg;
     I2c               : 1,
     SpiHost           : 1,
     Gpio              : 1,
+    Usb               : 1,  // Added USB as new Feature
     Dma               : 1,
     SerialLink        : 1,
     Vga               : 1,
@@ -584,6 +602,16 @@ package cheshire_pkg;
     SlinkTxAddrMask   : 'hFFFF_FFFF,
     SlinkTxAddrDomain : 'h0000_0000,
     SlinkUserAmoBit   : 1,  // Convention: lower AMO bits for cores, MSB for serial link
+    // USB config ( for now it's just a copy of the DMA config)
+    UsbConfMaxReadTxns  : 16,
+    UsbConfMaxWriteTxns : 16,
+    UsbConfAmoNumCuts   : 1,
+    UsbConfAmoPostCut   : 1,
+    UsbConfEnableTwoD   : 1,
+    UsbNumAxInFlight    : 16,
+    UsbMemSysDepth      : 8,
+    UsbJobFifoDepth     : 2,
+    UsbRAWCouplingAvail : 1,
     // DMA config
     DmaConfMaxReadTxns  : 4,
     DmaConfMaxWriteTxns : 4,

@@ -63,8 +63,18 @@ module cheshire_top_xilinx
 
   // VGA Sync signals
   output logic        vga_hs,
-  output logic        vga_vs
+  output logic        vga_vs,
+
+  inout wire          usb_dp,
+  inout wire          usb_dm
 );
+
+  logic  usb_dm_o;
+  logic  usb_dm_i;
+  logic  usb_dm_en_o;
+  logic  usb_dp_o;
+  logic  usb_dp_i;
+  logic  usb_dp_en_o;
 
   // Configure cheshire for FPGA mapping
   localparam cheshire_cfg_t FPGACfg = '{
@@ -73,22 +83,32 @@ module cheshire_top_xilinx
     Cva6BTBEntries    : ariane_pkg::ArianeDefaultConfig.BTBEntries,
     Cva6BHTEntries    : ariane_pkg::ArianeDefaultConfig.BHTEntries,
     Cva6NrPMPEntries  : 0,
-    Cva6ExtCieLength  : 'h2000_0000,
+    Cva6ExtCieLength  : 'h2000_0000,  // [0x2.., 0x4..) is CIE, [0x4.., 0x8..) is non-CIE
+    Cva6ExtCieOnTop   : 0,
     // Harts
     NumCores          : 1,
     CoreMaxTxns       : 8,
     CoreMaxTxnsPerId  : 4,
+    CoreUserAmoOffs   : 0, // Convention: lower AMO bits for cores, MSB for serial link
     // Interrupts
+    NumExtInIntrs     : 0,
+    NumExtClicIntrs   : NumExtPlicIntrs,
+    NumExtOutIntrTgts : 0,
+    NumExtOutIntrs    : 0,
+    ClicIntCtlBits    : ariane_pkg::ArianeDefaultConfig.CLICIntCtlBits,
     NumExtIntrSyncs   : 2,
     // Interconnect
     AddrWidth         : 48,
     AxiDataWidth      : 64,
     AxiUserWidth      : 2,  // Convention: bit 0 for core(s), bit 1 for serial link
     AxiMstIdWidth     : 2,
-    AxiMaxMstTrans    : 8,
-    AxiMaxSlvTrans    : 8,
+    AxiMaxMstTrans    : 24,
+    AxiMaxSlvTrans    : 24,
     AxiUserAmoMsb     : 1,
     AxiUserAmoLsb     : 0,
+    AxiUserErrBits    : 0,
+    AxiUserErrLsb     : 0,
+    AxiUserDefault    : 0,
     RegMaxReadTxns    : 8,
     RegMaxWriteTxns   : 8,
     RegAmoNumCuts     : 1,
@@ -101,9 +121,14 @@ module cheshire_top_xilinx
     I2c               : 1,
     SpiHost           : 1,
     Gpio              : 1,
+    Usb               : 1,
     Dma               : 1,
     SerialLink        : 0,
     Vga               : 1,
+    AxiRt             : 0,
+    Clic              : 0,
+    IrqRouter         : 0,
+    BusErr            : 1,
     // Debug
     DbgIdCode         : CheshireIdCode,
     DbgMaxReqs        : 4,
@@ -116,8 +141,8 @@ module cheshire_top_xilinx
     LlcSetAssoc       : 8,
     LlcNumLines       : 256,
     LlcNumBlocks      : 8,
-    LlcMaxReadTxns    : 8,
-    LlcMaxWriteTxns   : 8,
+    LlcMaxReadTxns    : 16,
+    LlcMaxWriteTxns   : 16,
     LlcAmoNumCuts     : 1,
     LlcAmoPostCut     : 1,
     LlcOutConnect     : 1,
@@ -138,6 +163,16 @@ module cheshire_top_xilinx
     SlinkTxAddrMask   : 'hFFFF_FFFF,
     SlinkTxAddrDomain : 'h0000_0000,
     SlinkUserAmoBit   : 1,  // Upper atomics bit for serial link
+    // USB config (for now this is just a copy of the DMA config)
+    UsbConfMaxReadTxns  : 16,
+    UsbConfMaxWriteTxns : 16,
+    UsbConfAmoNumCuts   : 1,
+    UsbConfAmoPostCut   : 1,
+    UsbConfEnableTwoD   : 1,
+    UsbNumAxInFlight    : 16,
+    UsbMemSysDepth      : 8,
+    UsbJobFifoDepth     : 2,
+    UsbRAWCouplingAvail : 1,  
     // DMA config
     DmaConfMaxReadTxns  : 4,
     DmaConfMaxWriteTxns : 4,
@@ -150,6 +185,11 @@ module cheshire_top_xilinx
     DmaRAWCouplingAvail : 1,
     // GPIOs
     GpioInputSyncs    : 1,
+    // AXI RT
+    AxiRtNumPending     : 16,
+    AxiRtWBufferDepth   : 16,
+    AxiRtNumAddrRegions : 2,
+    AxiRtCutPaths       : 1,   
     // All non-set values should be zero
     default: '0
   };
@@ -403,6 +443,17 @@ module cheshire_top_xilinx
 
 
   /////////////////////////
+  // USB I/O Connections //
+  /////////////////////////
+
+  assign usb_dp = usb_dp_en_o ? usb_dp_o : 'z;
+  assign usb_dp_i = usb_dp;
+
+  assign usb_dm = usb_dm_en_o ? usb_dm_o : 'z;
+  assign usb_dm_i = usb_dm;
+
+  
+  /////////////////////////
   // "RTC" Clock Divider //
   /////////////////////////
 
@@ -536,7 +587,13 @@ module cheshire_top_xilinx
     .vga_vsync_o        ( vga_vs          ),
     .vga_red_o          ( vga_r           ),
     .vga_green_o        ( vga_g           ),
-    .vga_blue_o         ( vga_b           )
+    .vga_blue_o         ( vga_b           ),
+    .usb_dm_o,
+    .usb_dm_i,
+    .usb_dm_en_o,
+    .usb_dp_o,
+    .usb_dp_i,
+    .usb_dp_en_o
   );
 
 endmodule
