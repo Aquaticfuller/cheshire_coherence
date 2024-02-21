@@ -159,10 +159,7 @@ packages:
     version: null
     source:
       Path: .bender/git/checkouts/idma-77bf7fa56d324e6a/target/rtl
-    dependencies:
-    - axi
-    - common_cells
-    - register_interface
+    dependencies: []
   irq_router:
     revision: d1d31350b24f3965b3a51e1bc96c71eb34e94db3
     version: 0.0.1-beta.1
