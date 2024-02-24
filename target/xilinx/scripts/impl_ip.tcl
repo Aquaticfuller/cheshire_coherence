@@ -19,6 +19,7 @@ switch $proj {
         switch $board {
             genesys2 {
                 set_property -dict  [list \
+                    CONFIG.USE_SAFE_CLOCK_STARTUP {true} \
                     CONFIG.PRIM_SOURCE {No_buffer} \
                     CONFIG.PRIM_IN_FREQ {200.000} \
                     CONFIG.CLKOUT2_USED {true} \
@@ -51,6 +52,7 @@ switch $proj {
             }
             vcu128 {
                 set_property -dict  [list \
+                    CONFIG.USE_SAFE_CLOCK_STARTUP {true} \
                     CONFIG.CLK_IN1_BOARD_INTERFACE {Custom} \
                     CONFIG.RESET_BOARD_INTERFACE {Custom} \
                     CONFIG.CLKOUT2_USED {true} \

@@ -102,31 +102,6 @@ module cheshire_top_xilinx (
   localparam cheshire_cfg_t FPGACfg = gen_cheshire_xilinx_cfg();
   `CHESHIRE_TYPEDEF_ALL(, FPGACfg)
 
-  ////////////////////////
-  //  Clock Generation  //
-  ////////////////////////
-
-  wire sys_clk;
-  wire soc_clk;
-
-  IBUFDS #(
-    .IBUF_LOW_PWR ("FALSE")
-  ) i_bufds_sys_clk (
-    .I  ( sys_clk_p ),
-    .IB ( sys_clk_n ),
-    .O  ( sys_clk   )
-  );
-
-  clkwiz i_clkwiz (
-    .clk_in1  ( sys_clk ),
-    .reset    ( '0 ),
-    .locked   ( ),
-    .clk_100  ( ),
-    .clk_50   ( soc_clk  ),
-    .clk_20   ( ),
-    .clk_10   ( )
-  );
-
   /////////////////////
   //  System Inputs  //
   /////////////////////
@@ -147,6 +122,33 @@ module cheshire_top_xilinx (
   assign test_mode_i = '0;
   assign boot_mode_i = '0;
 `endif
+
+  ////////////////////////
+  //  Clock Generation  //
+  ////////////////////////
+
+  wire sys_clk;
+  wire soc_clk;
+
+  IBUFDS #(
+    .IBUF_LOW_PWR ("FALSE")
+  ) i_bufds_sys_clk (
+    .I  ( sys_clk_p ),
+    .IB ( sys_clk_n ),
+    .O  ( sys_clk   )
+  );
+
+  // We properly reset the clock wizard;
+  // safe startup will block its output until stable.
+  clkwiz i_clkwiz (
+    .clk_in1  ( sys_clk ),
+    .reset    ( sys_reset ),
+    .locked   ( ),
+    .clk_100  ( ),
+    .clk_50   ( soc_clk  ),
+    .clk_20   ( ),
+    .clk_10   ( )
+  );
 
   ////////////
   //  VIOs  //
